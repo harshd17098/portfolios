@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -27,7 +27,15 @@ import {
   Layers, 
   Brain, 
   Award, 
-  Shield
+  Shield,
+  Briefcase,
+  Building,
+  Calendar,
+  MapPin,
+  Zap,
+  Users,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 
 // ==================== TYPES ====================
@@ -48,6 +56,18 @@ interface Skill {
   icon: React.ReactNode;
   category: 'frontend' | 'backend' | 'database' | 'tools' | 'ai';
   color: string;
+}
+
+interface Experience {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  period: string;
+  description: string[];
+  technologies: string[];
+  type: 'full-time' | 'contract' | 'freelance';
+  achievements: string[];
 }
 
 // ==================== FAKE DATA ====================
@@ -133,6 +153,89 @@ const projects: Project[] = [
   },
 ];
 
+const experiences: Experience[] = [
+  {
+    id: 1,
+    title: 'Senior MERN Stack Developer',
+    company: 'TechVision Solutions',
+    location: 'San Francisco, CA (Remote)',
+    period: '2022 - Present',
+    description: [
+      'Lead development of enterprise-scale MERN applications for Fortune 500 clients',
+      'Architected microservices-based backend systems handling 1M+ daily requests',
+      'Implemented CI/CD pipelines reducing deployment time by 70%',
+      'Mentored 5 junior developers in React best practices and clean architecture'
+    ],
+    technologies: ['React', 'Node.js', 'MongoDB', 'Docker', 'AWS', 'GraphQL', 'Redis', 'Kubernetes'],
+    type: 'full-time',
+    achievements: [
+      'Increased application performance by 40% through optimization',
+      'Reduced server costs by 30% with efficient AWS architecture',
+      'Achieved 99.9% uptime for critical production systems'
+    ]
+  },
+  {
+    id: 2,
+    title: 'Full Stack Developer',
+    company: 'Innovate Digital',
+    location: 'New York, NY',
+    period: '2020 - 2022',
+    description: [
+      'Developed 10+ full-stack applications using MERN stack',
+      'Implemented real-time features using WebSocket and Socket.io',
+      'Designed RESTful APIs serving 500K+ monthly users',
+      'Collaborated with UX designers to create responsive interfaces'
+    ],
+    technologies: ['React', 'Express.js', 'MongoDB', 'Socket.io', 'JWT', 'Redux', 'Tailwind'],
+    type: 'full-time',
+    achievements: [
+      'Delivered projects 20% faster than estimated timelines',
+      'Improved client satisfaction scores by 35%',
+      'Reduced page load times by 60% through optimization'
+    ]
+  },
+  {
+    id: 3,
+    title: 'Frontend Developer',
+    company: 'WebCraft Studios',
+    location: 'Boston, MA',
+    period: '2019 - 2020',
+    description: [
+      'Built responsive web applications with React and modern CSS',
+      'Implemented state management with Redux and Context API',
+      'Collaborated with backend teams on API integration',
+      'Optimized applications for SEO and performance'
+    ],
+    technologies: ['React', 'Redux', 'TypeScript', 'SASS', 'Webpack', 'Jest'],
+    type: 'full-time',
+    achievements: [
+      'Increased conversion rates by 25% through UX improvements',
+      'Achieved perfect Lighthouse scores for performance',
+      'Reduced bundle size by 40% through code splitting'
+    ]
+  },
+  {
+    id: 4,
+    title: 'Freelance Web Developer',
+    company: 'Self-Employed',
+    location: 'Remote',
+    period: '2018 - 2019',
+    description: [
+      'Developed custom websites and web applications for small businesses',
+      'Implemented e-commerce solutions with payment integration',
+      'Provided ongoing maintenance and support',
+      'Built portfolio of 20+ successful client projects'
+    ],
+    technologies: ['JavaScript', 'React', 'Node.js', 'Express', 'MongoDB', 'Stripe'],
+    type: 'freelance',
+    achievements: [
+      'Maintained 100% client satisfaction rate',
+      'Increased client revenue by an average of 45%',
+      'Built sustainable freelance business from scratch'
+    ]
+  }
+];
+
 const techStack = [
   { name: 'React', icon: '⚛️', level: 'Expert' },
   { name: 'Node.js', icon: '🚀', level: 'Expert' },
@@ -167,6 +270,362 @@ const HolographicButton = ({ children, onClick }: { children: React.ReactNode; o
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
     </motion.button>
+  );
+};
+
+// ==================== ANIMATED EXPERIENCE SECTION ====================
+const ExperienceTimeline = () => {
+  const [activeExperience, setActiveExperience] = useState<number>(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const experienceTypes = {
+    'full-time': { color: 'from-green-500 to-emerald-500', label: 'Full Time' },
+    'contract': { color: 'from-blue-500 to-cyan-500', label: 'Contract' },
+    'freelance': { color: 'from-purple-500 to-pink-500', label: 'Freelance' }
+  };
+
+  return (
+    <section id="experience" className="py-20 px-6 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-purple-950 opacity-50" />
+      <div className="absolute inset-0">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-px h-20 bg-gradient-to-b from-transparent via-cyan-500 to-transparent"
+            style={{
+              left: `${(i * 5) % 100}%`,
+              top: `${Math.sin(i) * 50}%`,
+            }}
+            animate={{
+              y: [0, -100, 0],
+              opacity: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: i * 0.1,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="container mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-gray-900/80 to-black/80 backdrop-blur-xl border border-cyan-500/30 mb-6 group">
+              <Briefcase className="w-5 h-5 mr-3 text-cyan-400" />
+              <span className="text-base font-medium bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                Professional Journey
+              </span>
+            </div>
+            <h2 className="text-5xl md:text-7xl font-bold mb-6">
+              <span className="text-white">Career</span>{' '}
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Timeline
+              </span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+              5+ years of building scalable applications and leading development teams
+            </p>
+          </div>
+
+          {/* Timeline Visualization */}
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Left: Timeline Navigation */}
+            <div className="space-y-6">
+              <div className="relative">
+                {/* Timeline Line */}
+                <div className="absolute left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500/30 via-purple-500/30 to-pink-500/30" />
+                
+                {experiences.map((exp, index) => (
+                  <motion.div
+                    key={exp.id}
+                    initial={{ opacity: 0, x: -50 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 }}
+                    className="relative mb-8"
+                    onClick={() => setActiveExperience(exp.id)}
+                  >
+                    {/* Timeline Dot */}
+                    <motion.div
+                      className={`absolute left-6 w-4 h-4 rounded-full cursor-pointer z-10 ${
+                        activeExperience === exp.id 
+                          ? 'scale-125 bg-gradient-to-r from-cyan-500 to-purple-500' 
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {activeExperience === exp.id && (
+                        <motion.div
+                          className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 blur opacity-50"
+                          animate={{ scale: [1, 1.5, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      )}
+                    </motion.div>
+
+                    {/* Experience Card */}
+                    <motion.div
+                      className={`ml-12 p-6 rounded-2xl backdrop-blur-xl border cursor-pointer transition-all duration-300 ${
+                        activeExperience === exp.id
+                          ? 'bg-gray-900/90 border-cyan-500/50 shadow-2xl shadow-cyan-500/20'
+                          : 'bg-gray-900/50 border-gray-800 hover:border-gray-700'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      animate={activeExperience === exp.id ? { y: -5 } : {}}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold mb-1">{exp.title}</h3>
+                          <div className="flex items-center text-gray-400 text-sm mb-2">
+                            <Building className="w-4 h-4 mr-2" />
+                            <span>{exp.company}</span>
+                            <span className="mx-2">•</span>
+                            <MapPin className="w-4 h-4 mr-2" />
+                            <span>{exp.location}</span>
+                          </div>
+                        </div>
+                        <div className={`px-3 py-1 text-xs rounded-full bg-gradient-to-r ${experienceTypes[exp.type].color} bg-opacity-20`}>
+                          {experienceTypes[exp.type].label}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-400 mb-4">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span>{exp.period}</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {exp.technologies.slice(0, 3).map(tech => (
+                          <span 
+                            key={tech}
+                            className="px-3 py-1 text-xs bg-gray-800/50 rounded-full border border-gray-700"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                        {exp.technologies.length > 3 && (
+                          <span className="px-3 py-1 text-xs text-gray-500">
+                            +{exp.technologies.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Experience Details */}
+            <div className="lg:sticky lg:top-24 h-fit">
+              {experiences.map(exp => (
+                <AnimatePresence mode="wait" key={exp.id}>
+                  {activeExperience === exp.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <GlowingCard className="mb-8">
+                        <div className="flex items-center justify-between mb-6">
+                          <div>
+                            <h3 className="text-2xl font-bold mb-2">{exp.title}</h3>
+                            <div className="flex items-center text-gray-400">
+                              <Building className="w-5 h-5 mr-2" />
+                              <span className="text-lg">{exp.company}</span>
+                            </div>
+                          </div>
+                          <motion.div
+                            className={`px-4 py-2 rounded-full bg-gradient-to-r ${experienceTypes[exp.type].color} bg-opacity-20`}
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <span className="font-semibold">{experienceTypes[exp.type].label}</span>
+                          </motion.div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-3 gap-4 mb-8">
+                          <div className="text-center p-4 rounded-xl bg-gray-800/30">
+                            <div className="text-3xl font-bold text-cyan-400 mb-1">5+</div>
+                            <div className="text-sm text-gray-400">Years Experience</div>
+                          </div>
+                          <div className="text-center p-4 rounded-xl bg-gray-800/30">
+                            <div className="text-3xl font-bold text-purple-400 mb-1">50+</div>
+                            <div className="text-sm text-gray-400">Projects</div>
+                          </div>
+                          <div className="text-center p-4 rounded-xl bg-gray-800/30">
+                            <div className="text-3xl font-bold text-green-400 mb-1">99%</div>
+                            <div className="text-sm text-gray-400">Satisfaction</div>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-8">
+                          <h4 className="text-lg font-semibold mb-4 flex items-center">
+                            <Zap className="w-5 h-5 mr-2 text-yellow-400" />
+                            Responsibilities
+                          </h4>
+                          <ul className="space-y-3">
+                            {exp.description.map((item, idx) => (
+                              <motion.li
+                                key={idx}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="flex items-start"
+                              >
+                                <ChevronRight className="w-5 h-5 text-cyan-400 mr-2 mt-1 flex-shrink-0" />
+                                <span className="text-gray-300">{item}</span>
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Technologies */}
+                        <div className="mb-8">
+                          <h4 className="text-lg font-semibold mb-4 flex items-center">
+                            <Code className="w-5 h-5 mr-2 text-purple-400" />
+                            Technologies Used
+                          </h4>
+                          <div className="flex flex-wrap gap-3">
+                            {exp.technologies.map((tech, idx) => (
+                              <motion.span
+                                key={tech}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="px-4 py-2 bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg border border-gray-700 hover:border-cyan-500/50 transition-colors"
+                              >
+                                {tech}
+                              </motion.span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Achievements */}
+                        <div>
+                          <h4 className="text-lg font-semibold mb-4 flex items-center">
+                            <Award className="w-5 h-5 mr-2 text-yellow-400" />
+                            Key Achievements
+                          </h4>
+                          <div className="space-y-4">
+                            {exp.achievements.map((achievement, idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.15 }}
+                                className="p-4 rounded-xl bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-700/50"
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 to-cyan-500 mr-3 animate-pulse" />
+                                  <span className="text-gray-300">{achievement}</span>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      </GlowingCard>
+
+                      {/* Career Growth Visualization */}
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-2xl blur" />
+                        <div className="relative p-6 rounded-2xl bg-gray-900/80 backdrop-blur-xl border border-gray-800">
+                          <h4 className="text-lg font-semibold mb-6 flex items-center">
+                            <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
+                            Career Progression
+                          </h4>
+                          <div className="space-y-4">
+                            {experiences.map((e, idx) => (
+                              <motion.div
+                                key={e.id}
+                                className="flex items-center"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                              >
+                                <div className={`w-3 h-3 rounded-full mr-4 ${
+                                  exp.id >= e.id 
+                                    ? 'bg-gradient-to-r from-green-500 to-cyan-500' 
+                                    : 'bg-gray-700'
+                                }`} />
+                                <div className="flex-1">
+                                  <div className="flex justify-between mb-1">
+                                    <span className={`font-medium ${
+                                      exp.id >= e.id ? 'text-white' : 'text-gray-500'
+                                    }`}>
+                                      {e.title}
+                                    </span>
+                                    <span className="text-sm text-gray-400">{e.period}</span>
+                                  </div>
+                                  <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                    <motion.div
+                                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-purple-500"
+                                      initial={{ width: 0 }}
+                                      animate={{ width: exp.id >= e.id ? '100%' : '0%' }}
+                                      transition={{ duration: 1, delay: idx * 0.2 }}
+                                    />
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              ))}
+            </div>
+          </div>
+
+          {/* Additional Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }}
+            className="mt-20"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { value: '5+', label: 'Years Experience', icon: Calendar, color: 'cyan' },
+                { value: '50+', label: 'Projects Delivered', icon: Code, color: 'purple' },
+                { value: '100%', label: 'Client Retention', icon: Users, color: 'green' },
+                { value: '40%', label: 'Avg. Performance Gain', icon: BarChart3, color: 'yellow' },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ y: -10 }}
+                  className="relative group"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r from-${stat.color}-500/20 to-${stat.color}-600/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                  <div className="relative bg-gray-900/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 group-hover:border-transparent transition-all text-center">
+                    <stat.icon className={`w-10 h-10 mx-auto mb-4 text-${stat.color}-400`} />
+                    <div className={`text-4xl font-bold mb-2 text-${stat.color}-300`}>{stat.value}</div>
+                    <div className="text-gray-400">{stat.label}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
   );
 };
 
@@ -221,37 +680,6 @@ const DataSphere = () => {
   );
 };
 
-// Simple Particles component without buffer attributes
-const SimpleParticles = () => {
-  const groupRef = useRef<THREE.Group>(null);
-  const particlesCount = 100;
-  
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.05;
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      {Array.from({ length: particlesCount }).map((_, i) => {
-        const angle = (i / particlesCount) * Math.PI * 2;
-        const radius = 8 + Math.random() * 5;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        const y = (Math.random() - 0.5) * 10;
-        
-        return (
-          <mesh key={i} position={[x, y, z]}>
-            <sphereGeometry args={[0.05, 8, 8]} />
-            <meshBasicMaterial color="#00ff88" />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-};
-
 const Advanced3DBackground = () => {
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -268,10 +696,6 @@ const Advanced3DBackground = () => {
           {/* Futuristic Elements */}
           <FloatingCube />
           <DataSphere />
-          {/* <SimpleParticles /> */}
-          
-          {/* Tech Grid Floor */}
-          {/* <gridHelper args={[30, 30, '#00ff88', '#00ff8820']} position={[0, -3, 0]} /> */}
           
           <OrbitControls 
             enableZoom={false} 
@@ -474,10 +898,10 @@ const EnhancedHeroSection = ({ scrollToSection }: { scrollToSection: (sectionId:
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="px-6 py-3 rounded-lg bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-green-500/50 flex items-center space-x-2 group"
-                  onClick={() => scrollToSection('contact')}
+                  onClick={() => scrollToSection('experience')}
                 >
-                  <Terminal className="w-5 h-5 group-hover:animate-pulse" />
-                  <span>Start Project</span>
+                  <Briefcase className="w-5 h-5 group-hover:animate-pulse" />
+                  <span>View Experience</span>
                 </motion.button>
               </div>
               
@@ -1136,6 +1560,9 @@ const MERNPortfolio: React.FC = () => {
             </motion.div>
           </div>
         </section>
+
+        {/* Experience Section */}
+        <ExperienceTimeline />
 
         {/* Contact Section */}
         <section id="contact" className="py-20 px-6">
